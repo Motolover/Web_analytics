@@ -1,0 +1,26 @@
+<script>
+window.dataLayer = window.dataLayer || [];
+
+window.dataLayer.push = function() {
+  var event = arguments[0];
+  var eventNamePattern = /^submit_form/;
+  if (event.event.match(eventNamePattern)) {
+    console.log("Data layer event 'yourEventName' detected!");
+ 
+    // Your code to run when the "yourEventName" event is pushed to the data layer
+ 
+    // Reach the goal in Yandex.Metrika
+    if (typeof yaCounter476665172 !== "undefined") {
+      yaCounter476665172.reachGoal("all_form", function() {
+        console.log("Goal 'all_form' reached successfully");
+        // Redirect the user to the thank-you page
+      // window.location.href = "https://rosa-narcologi.ru/spasibo";
+      });
+    }
+  }
+ 
+  // Call the original push method
+  Array.prototype.push.apply(this, arguments);
+};
+//
+</script>
