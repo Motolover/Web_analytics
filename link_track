@@ -1,0 +1,14 @@
+<script>
+  (function () {
+    var keyword = 'your-keyword';
+    document.addEventListener('click', function (event) {
+      var target = event.target;
+      if (target.tagName === 'A' && target.href.indexOf(keyword) > -1) {
+        // Отправка события в Яндекс.Метрику
+        ym(12345678, 'reachGoal', 'your-goal-name', function () {
+          console.log('Событие успешно отправлено в Яндекс.Метрику');
+        });
+      }
+    });
+  })();
+</script>
