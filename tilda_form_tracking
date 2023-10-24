@@ -1,4 +1,3 @@
-<script>
 window.dataLayer = window.dataLayer || [];
 
 window.dataLayer.push = function() {
@@ -10,8 +9,8 @@ window.dataLayer.push = function() {
     // Your code to run when the "yourEventName" event is pushed to the data layer
  
     // Reach the goal in Yandex.Metrika
-    if (typeof yaCounter476665172 !== "undefined") {
-      yaCounter476665172.reachGoal("all_form", function() {
+    if (typeof yaCounter94752922 !== "undefined") {
+      yaCounter94752922.reachGoal("all_form", function() {
         console.log("Goal 'all_form' reached successfully");
         // Redirect the user to the thank-you page
       // window.location.href = "https://rosa-narcologi.ru/spasibo";
