@@ -11,7 +11,7 @@ window.dataLayer.push = function() {
  
     // Reach the goal in Yandex.Metrika
     if (typeof yaCounter94752922 !== "undefined") {
-      yaCounter94752922.reachGoal("all_form", function() {
+      yaCounter94752922.reachGoal("all_form", {URL: document.location.href}, function() {
         console.log("Goal 'all_form' reached successfully");
         // Redirect the user to the thank-you page
       // window.location.href = "https://rosa-narcologi.ru/spasibo";
