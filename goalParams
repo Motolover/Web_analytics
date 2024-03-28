@@ -1,0 +1,4 @@
+<script>  
+var goalParams = {'test_click1': {{Page Path}}}
+ym(92442482,'reachGoal','test_click1', goalParams);
+</script>
