@@ -1,0 +1,10 @@
+Calendar_New = 
+ADDCOLUMNS(
+CALENDAR(MIN(view_rawdata[data_sozdanuiya]), MAX(view_rawdata[data_sozdanuiya])),
+"week", YEAR([Date]) & "-W" & RIGHT("00" & WEEKNUM([Date]), 2),
+"axis date", FORMAT([Date], "YYYY-MM-DD"),
+"week_ext", YEAR([Date]) & "-W" & RIGHT( "00" & WEEKNUM ( [Date], 2 ) , 2 ) & " (" & FORMAT ( [Date] - WEEKDAY ( [Date], 2 ) + 1, "DD.MM" ) & " - " & FORMAT ( [Date] - WEEKDAY ( [Date], 2 ) + 7, "DD.MM" ) & ")",
+"week_ext_reversed", FORMAT ( [Date] - WEEKDAY ( [Date], 2 ) + 1, "YYYY.MM.DD" ) & " - " & FORMAT ( [Date] - WEEKDAY ( [Date], 2 ) + 7, "YYYY.MM.DD" ),
+"axis moths", FORMAT([Date], "YYYY-MM"),
+"Quart", FORMAT([Date],"Q")
+)
