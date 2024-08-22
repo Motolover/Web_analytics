@@ -1,0 +1,23 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+
+# Задаем параметры профиля Chrome
+options = Options()
+prefs = {
+    "download.default_directory": "/path/to/download/directory",  # Указываем путь к папке для загрузки
+    "download.prompt_for_download": False,  # Отключаем диалоговое окно подтверждения загрузки
+    "download.directory_upgrade": True,  # Разрешаем обновление директории загрузки
+    "safebrowsing.enabled": True  # Включаем безопасное скачивание
+}
+options.add_experimental_option("prefs", prefs)
+
+# Инициализация веб-драйвера
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+# Переходим на сайт и выполняем нужные действия
+driver.get("https://example.com")
+
+# После завершения всех действий, не забудьте закрыть браузер
+driver.quit()
