@@ -21,3 +21,20 @@ driver.get("https://example.com")
 
 # После завершения всех действий, не забудьте закрыть браузер
 driver.quit()
+
+
+
+
+
+# Определение последнего загруженного файла
+files = os.listdir(download_dir)
+files = [os.path.join(download_dir, f) for f in files]  # Полные пути к файлам
+latest_file = max(files, key=os.path.getctime)  # Находим самый новый файл
+
+# Переименование файла
+new_file_name = "новое_имя_файла.txt"
+new_file_path = os.path.join(download_dir, new_file_name)
+os.rename(latest_file, new_file_path)
+
+# Закрытие браузера
+driver.quit()
