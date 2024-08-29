@@ -1,0 +1,26 @@
+import requests
+
+# Токен доступа для API
+ACCESS_TOKEN = 'ваш_токен_доступа'
+
+# Параметры запроса
+params = {
+    'ids': 'ваш_идентификатор_счётчика',  # ID счётчика
+    'metrics': 'ym:s:visits,ym:s:pageviews,ym:s:users',  # Метрики, для которых вы хотите получить данные
+    'date1': '2024-01-01',  # Начальная дата
+    'date2': '2024-01-31',  # Конечная дата
+    'group': 'all',  # Группировка данных
+    'accuracy': 'full',  # Точность данных
+    'oauth_token': ACCESS_TOKEN
+}
+
+# Отправка запроса
+response = requests.get('https://api-metrika.yandex.net/stat/v1/data', params=params)
+
+# Вывод результатов
+data = response.json()
+totals = data['totals']  # Итоговые значения по метрикам
+print('Итого по метрикам:', totals)
+
+averages = [total / len(data['data']) for total in totals]  # Средние значения
+print('Средние по метрикам:', averages)
