@@ -1,0 +1,13 @@
+<script>
+jQuery(document).ready(function($) {
+    // Обработка клика по первой ссылке (бот)
+    jQuery('a.elementor-social-icon-icon-telegram-6-1[href="https://telegram.me/CleaningBriolinbot"]').on('click', function() {
+        ym(90084061, 'reachGoal', 'tg_bot_click');
+    });
+
+    // Обработка клика по второй ссылке (канал)
+    jQuery('a.elementor-social-icon-icon-telegram-6-1[href="https://t.me/briolin_klining"]').on('click', function() {
+        ym(90084061, 'reachGoal', 'tg_bot_click');
+    });
+});
+</script>
