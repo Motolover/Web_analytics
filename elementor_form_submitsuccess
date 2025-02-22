@@ -1,0 +1,8 @@
+<script>
+jQuery(document).ready(function($) {
+    jQuery(document).on('submit_success', function() {
+        // Отправка цели в Яндекс.Метрику
+        ym(90084061, 'reachGoal', 'all_forms');
+    });
+});
+</script>
