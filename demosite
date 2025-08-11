@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo for Analytics</title>
+
+  <!-- Yandex.Metrika counter -->
+  <script type="text/javascript">
+    (function(m,e,t,r,i,k,a){
+        m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+        m[i].l=1*new Date();
+        for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+        k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+    })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=103646379', 'ym');
+
+    ym(103646379, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
+  </script>
+   <noscript><div><img src="https://mc.yandex.ru/watch/103646379" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- /Yandex.Metrika counter -->
+   
+  <!-- Сначала инициализируем dataLayer -->
+  <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=G-4RJ2GGKVKF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-4RJ2GGKVKF'); // ← сюда вставь свой реальный Measurement ID
+  </script>
+  
+  <!-- Google Tag Manager -->
+  <script>
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id=GTM-TXTLSP6'+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-TXTLSP6');
+  </script>
+  <!-- End Google Tag Manager -->
+
+<style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    header {
+      background-color: #2a9d8f;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+    }
+    main {
+      background-color: white;
+      padding: 20px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+    footer {
+      text-align: center;
+      color: #666;
+      font-size: 0.9em;
+      margin-top: 20px;
+    }
+    .btn {
+      background-color: #e76f51;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      display: block;       /* Каждая кнопка на новой строке */
+      width: 100px;         /* Фиксированная ширина (можно задать в %) */
+      line-height: 1.4;        /* Отступы между кнопками */
+    }
+    .btn.clicked {
+      background-color: #2ecc71; /* зелёный при нажатии */
+    }
+
+    .btno {
+      background-color: #b9b9b9;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      display: block;       /* Каждая кнопка на новой строке */
+      width: 100px;         /* Фиксированная ширина (можно задать в %) */
+      line-height: 1.4;        /* Отступы между кнопками */
+    }
+    .btno.clicked {
+      background-color: #2ecc71; /* зелёный при нажатии */
+    }
+
+    .container {    
+     display: grid;
+     grid-template-columns: 1fr 1fr; /* Два столбца равной ширины */
+     gap: 20px; /* Отступ между кнопками */
+     max-width: 500px; /* Ограничиваем ширину контейнера */
+     margin: 0 auto; /* Центрируем контейнер */
+     min-height: calc(100vh - 100px);
+     padding-top: 50px; /* Отступ сверху */
+  </style>
+</head>
+<body>
+
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TXTLSP6"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+  <header>
+    <h1>DEMO SITE - BASKET</h1>
+  </header>
+    <div class="container">
+    <!-- <button class="btn" onclick="handleClick(this)">Add to Cart</button>-->
+    <button class="btn" onclick="handleClick(this)">Оплата онлайн</button>
+    <button class="btn" onclick="handleClick(this)">Наложенный платеж</button>
+    <button class="btn" onclick="handleClick(this)">Var Robokasas</button>
+    <button class="btn" onclick="handleClick(this)">Var Payanyway</button>
+    <button class="btn" onclick="handleClick(this)">Курьер</button>
+    <button class="btn" onclick="handleClick(this)">Самовывоз</button>
+    <button class="btno" onclick="handleClick(this)">ОПЛАТИТЬ ЗАКАЗ</button>
+    </div>
+  <footer>
+    <p>© 2025 FB</p>
+  </footer>
+
+  <script>
+  function handleClick(button) {
+    button.classList.toggle('clicked');
+
+    // Прямой вызов события GA4
+    // gtag('event', 'click_test2', {
+    //   event_category: 'button',
+    //   event_label: 'Main Button'
+    // });
+
+    dataLayer.push({
+      'event': 'Add_to_Cart',
+      'ecommerce': {
+        'currencyCode': 'RUB',
+        'add': {
+          'products': [
+            {
+              'id': '111', ///Динамечески подставляем свои занчения
+              'name': 'demo_product',
+              'price': 1000,
+              'brand': 'demobrand',
+              'category': 'democategory',
+              'quantity': 1
+            }
+          ]
+        }
+      }
+    });
+
+    // console.log('Событие отправлено в GA4 через gtag');
+  }
+</script>
+
+<script>
+  // Храним выбранные значения
+  var paymentMethod = 'Онлайн'; // По умолчанию
+  var deliveryMethod = 'Курьер'; // По умолчанию
+
+  // Обработчик кликов по всем кнопкам
+  function handleClick(button) {
+    var buttonText = button.textContent.trim();
+
+    // Определяем, какая кнопка была нажата
+    switch(buttonText) {
+      case 'Оплата онлайн':
+        paymentMethod = 'Онлайн';
+        console.log('Выбрана оплата: Онлайн'); // Логируем выбор
+        break;
+      case 'Наложенный платеж':
+        paymentMethod = 'Наложка';
+        console.log('Выбрана оплата: Наложка'); // Логируем выбор
+        break;
+      case 'Курьер':
+        deliveryMethod = 'Курьер';
+        console.log('Выбрана доставка: Курьер'); // Логируем выбор
+        break;
+      case 'Самовывоз':
+        deliveryMethod = 'Самовывоз';
+        console.log('Выбрана доставка: Самовывоз'); // Логируем выбор
+        break;
+      case 'ОПЛАТИТЬ ЗАКАЗ':
+        // Логируем перед отправкой
+        console.log('Отправка данных в Метрику:', {
+          'Способ оплаты': paymentMethod,
+          'Способ доставки': deliveryMethod
+        });
+        // Отправляем данные в Метрику
+        sendToYandexMetrica();
+        break;
+    }
+  }
+
+  // Функция отправки данных в Яндекс.Метрику
+  function sendToYandexMetrica() {
+    var zakazParams = {
+      'Способ оплаты': paymentMethod,
+      'Способ доставки': deliveryMethod
+    };
+
+    // Проверяем, загружена ли Метрика, и отправляем
+    if (typeof ym === 'function') {
+      ym(103646379, 'reachGoal', 'zakaz', zakazParams);
+      console.log('Данные успешно отправлены в Яндекс.Метрику:', zakazParams); // Лог успешной отправки
+    } else {
+      console.error('Ошибка: Яндекс.Метрика не загружена! Данные:', zakazParams); // Лог ошибки
+    }
+  }
+</script>
+
+</body>
+</html>
