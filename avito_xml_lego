@@ -1,0 +1,325 @@
+import pandas as pd  # Анализ данных
+import re            # Регулярные выражения
+import lxml          # Парсинг XML/HTML
+import json          # Работа с JSON
+import os            # Работа с файловой системой
+import sys           # Аргументы командной строки
+import yaml          # Чтение YAML-конфигов (если используется)
+import paramiko      # Подключение для отправка на сервер
+import requests      #
+import numpy as np
+
+from lxml import etree
+
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
+# Настройка доступа
+scope = [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive'
+]
+
+# Укажите правильный путь к вашему JSON-ключу на локальной машине
+#credentials = ServiceAccountCredentials.from_json_keyfile_name(
+#    r'C:\Users\Fibo\Проекты\_WH40\Сервер\able-engine-276816-f1ea18570bfa.json',  # Локальный путь
+#    scope
+#)
+
+# Укажите правильный путь к вашему JSON-ключу на локальной машине
+credentials = ServiceAccountCredentials.from_json_keyfile_name(
+    '/usr/projects/keys/able-engine-276816-f1ea18570bfa.json',  # Новый путь на сервере
+    scope
+)
+
+# Авторизация
+client = gspread.authorize(credentials)
+# Подключение к таблице
+try:
+    spreadsheet = client.open('joytoy_parsing_table')  # Название таблицы
+    worksheet = spreadsheet.worksheet('Import Matrix 2.0')  # Название листа
+    print('Таблица успешно подключена')
+
+    # Пример чтения данных
+    data = worksheet.get_all_records()
+    print(f"Найдено {len(data)} записей")
+
+except Exception as e:
+    print(f"Ошибка подключения: {str(e)}")
+
+rows = worksheet.get_all_values()
+joytoy_wh_df = pd.DataFrame.from_records(rows)
+joytoy_wh_df = pd.DataFrame.from_records(rows[1:], columns=rows[0])
+
+#Создаем ключевые столбцы из парсинга датафрейма
+avito_df = joytoy_wh_df[['Franchise', 'Category', 'SKU (new)', 'Name', 'Short_name', 'Link', 'URL', 'Stock', 'Price', 'Scale', 'Preorder', 'Applicable Age', 'Scale', 'Articul', 'Avito_ID', 'Piece Count']]
+
+# Выбируем список позиций для тестирования
+#value_list = ["6927054401284", "6927054401277", "6927054401260", "6927054401291", "6927054401338", "6927054401345"]
+#avito_df = avito_df[avito_df['SKU (new)'].isin(value_list)]
+
+# Выбираем только нужные франшизы джойтой
+#value_list = ["LEGO", "JoyToy Warhammer 40K", "JoyToy Warhammer 30K", "JoyToy Dark Source", "JoyToy Infinity", "JoyToy Hardcore Coldplay", "JoyToy Dark Source-Jiang Hu", "JoyToy STRIFE", "JoyToy TMNT", "JoyToy Battle for the Stars", "JoyToy Age of Sigmar"]
+#avito_df = avito_df[avito_df['Franchise'].isin(value_list)]
+
+# Франшиза Joy по вхождению строки
+avito_df = avito_df[avito_df['Franchise'].str.contains("JoyToy", na=False)]
+
+# Получаем таблицу с предзаказами
+avit_df_1 = avito_df[((avito_df['Stock'] == '0') & (avito_df['Preorder'] != ''))]
+# Получаем ассортимент в наличии
+avit_df_2 = avito_df[((avito_df['Stock'] != '0') & (avito_df['Preorder'] == ''))]
+
+# Аналог UNION - объединение всех строк
+union_df = pd.concat([avit_df_1, avit_df_2], ignore_index=True).drop_duplicates()
+
+avito_df_final = union_df[['Franchise', 'Category', 'SKU (new)', 'Name', 'Short_name', 'Link', 'URL', 'Stock', 'Price', 'Scale', 'Preorder', 'Applicable Age', 'Scale', 'Articul', 'Avito_ID', 'Piece Count']]
+
+# Чистим лишние ссылки в фото. До 5 фотограций максимум
+def keep_part_by_char_count(string, char, count):
+    # Ищем индексы вхождений символа
+    indices = [i for i, c in enumerate(string) if c == char]
+    if len(indices) < count:
+        return string
+    else:
+        return string[:indices[count-1]+1]
+
+# Применяем функцию к определенным строкам в столбце 'text'
+char = '|'
+count = 9
+avito_df_final['URL'] = avito_df_final['URL'].apply(lambda x: keep_part_by_char_count(x, char, count))
+
+Description_string_stock = """В нaличии. Hовый, запечатанный.
+
+{Franchise} {Name}
+
+Oписание модeли:
+· Маcштаб пpoдуктa: 1:18
+· Maтериал: АБС-ПВX
+· Применимый вoзраcт: {ApplicableAge}
+· UРC : {SKU_new}
+
+Oчeнь мнoго пoдвижныx суставов, сoответcтвeннo бoльшой выбop пoз для фигурки - к каждой мoдeли идут дополнительные головы, руки, оружие и т.д.
+
+❤️ Добавь это объявление к себе в избранное
+
+✅ В профиле есть еще очень много интересного!)
+
+💬 Подписывайся на наши соцсети!
+
+Если интересует что-то из Jоytоy Wаrhаmmеr/Infinity/Dаrk Sоursе, LЕGО, Hot Toys и т.д. пишите - можем привезти под заказ практически любой товар!
+
+# Wаrhаmmеr 40000, Вархаммер 40000, Wаrhаmmеr 40k, JоyТоy, Jоy Тоy, Dеаth Коrрs оf Кriеg, Корпус Смерти Крига, Имперская гвардия, Imреriаl Guаrd, Sрасе Маrinеs, Sрасе Wоlvеs, Ultrаmаrinеs, Ультрамарины, Вlооd Аngеls, Кровавые Ангелы, Аstrа Мilitаrum, Adepta Sororitas, Сестры Битвы, Adeptus Custodes, Кустодес, Adeptus Mechanicus, Механикус, Black Legion, Черный Легион, Black Templars, Черные Храмовники, Dark Angels, Темные Ангелы, Grey Knights, Серые Рыцари, Imperial Fists, Имперские Кулаки, Iron Hands, Железные Руки, Necrons, Некроны, Orkcs, Орки, Raven Guards, Гвардия Ворона, Salamanders, Саламандры, Sons of Horus, Сыны Хоруса, T’au Empire, Империя Тау, White Consuls, Белые Консулы, White Scars, Белые Шрамы, Tyranids, Тираниды, Ваха, Коллекционные фигурки, Миниатюры, 1/18, 1/6, League of Legends"""
+
+Description_string_stock
+
+
+Description_string_preorder = """{Preorder}
+
+{Franchise} {Name}
+
+Oписание модeли:
+· Маcштаб пpoдуктa: 1:18
+· Maтериал: АБС-ПВX
+· Применимый вoзраcт: {ApplicableAge}
+· UРC : {SKU_new}
+
+Oчeнь мнoго пoдвижныx суставов, сoответcтвeннo бoльшой выбop пoз для фигурки - к каждой мoдeли идут дополнительные головы, руки, оружие и т.д.
+
+❤️ Добавь это объявление к себе в избранное
+
+✅ В профиле есть еще очень много интересного!)
+
+💬 Подписывайся на наши соцсети!
+
+Если интересует что-то из Jоytоy Wаrhаmmеr/Infinity/Dаrk Sоursе, LЕGО, Hot Toys и т.д. пишите - можем привезти под заказ практически любой товар!
+
+# Wаrhаmmеr 40000, Вархаммер 40000, Wаrhаmmеr 40k, JоyТоy, Jоy Тоy, Dеаth Коrрs оf Кriеg, Корпус Смерти Крига, Имперская гвардия, Imреriаl Guаrd, Sрасе Маrinеs, Sрасе Wоlvеs, Ultrаmаrinеs, Ультрамарины, Вlооd Аngеls, Кровавые Ангелы, Аstrа Мilitаrum, Adepta Sororitas, Сестры Битвы, Adeptus Custodes, Кустодес, Adeptus Mechanicus, Механикус, Black Legion, Черный Легион, Black Templars, Черные Храмовники, Dark Angels, Темные Ангелы, Grey Knights, Серые Рыцари, Imperial Fists, Имперские Кулаки, Iron Hands, Железные Руки, Necrons, Некроны, Orkcs, Орки, Raven Guards, Гвардия Ворона, Salamanders, Саламандры, Sons of Horus, Сыны Хоруса, T’au Empire, Империя Тау, White Consuls, Белые Консулы, White Scars, Белые Шрамы, Tyranids, Тираниды, Ваха, Коллекционные фигурки, Миниатюры, 1/18, 1/6, League of Legends"""
+
+Description_string_preorder
+
+Description_string_nonstock = """Наличие данной модели необходимо уточнить в ЛС.
+
+{Franchise} {Name}
+
+Oписание модeли:
+· Маcштаб пpoдуктa: 1:18
+· Maтериал: АБС-ПВX
+· Применимый вoзраcт: {ApplicableAge}
+· UРC : {SKU_new}
+
+Oчeнь мнoго пoдвижныx суставов, сoответcтвeннo бoльшой выбop пoз для фигурки - к каждой мoдeли идут дополнительные головы, руки, оружие и т.д.
+
+❤️ Добавь это объявление к себе в избранное
+
+✅ В профиле есть еще очень много интересного!)
+
+💬 Подписывайся на наши соцсети!
+
+Если интересует что-то из Jоytоy Wаrhаmmеr/Infinity/Dаrk Sоursе, LЕGО, Hot Toys и т.д. пишите - можем привезти под заказ практически любой товар!
+
+# Wаrhаmmеr 40000, Вархаммер 40000, Wаrhаmmеr 40k, JоyТоy, Jоy Тоy, Dеаth Коrрs оf Кriеg, Корпус Смерти Крига, Имперская гвардия, Imреriаl Guаrd, Sрасе Маrinеs, Sрасе Wоlvеs, Ultrаmаrinеs, Ультрамарины, Вlооd Аngеls, Кровавые Ангелы, Аstrа Мilitаrum, Adepta Sororitas, Сестры Битвы, Adeptus Custodes, Кустодес, Adeptus Mechanicus, Механикус, Black Legion, Черный Легион, Black Templars, Черные Храмовники, Dark Angels, Темные Ангелы, Grey Knights, Серые Рыцари, Imperial Fists, Имперские Кулаки, Iron Hands, Железные Руки, Necrons, Некроны, Orkcs, Орки, Raven Guards, Гвардия Ворона, Salamanders, Саламандры, Sons of Horus, Сыны Хоруса, T’au Empire, Империя Тау, White Consuls, Белые Консулы, White Scars, Белые Шрамы, Tyranids, Тираниды, Ваха, Коллекционные фигурки, Миниатюры, 1/18, 1/6, League of Legends"""
+
+Description_string_nonstock
+
+Description_string_stock_lego = """"В нaличии. Hовый, запечатанный.
+
+{Franchise} {Name}
+
+Oписание модeли:
+· Koл-во деталей: {Piece_Count}
+· Применимый вoзраcт: {ApplicableAge}
+· UРC : {SKU_new}
+
+❤️ Добавь это объявление к себе в избранное
+
+✅ В профиле есть еще очень много интересного!)
+
+💬 Подписывайся на наши соцсети!
+
+Если интересует что-то из Jоytоy Wаrhаmmеr/Infinity/Dаrk Sоursе, LЕGО, Hot Toys и т.д. пишите - можем привезти под заказ практически любой товар!
+
+# LЕGО, Лего, Конструктор, Набор, lego star wars, lego marvel, lego city, lego heroes, lego ninjago, lego super heroes, lego technic, lego mindstorms, lego worlds, lego minecraft, lego harry potter, lego duplo, lego friends"""
+
+Description_string_stock_lego
+
+Description_string_preorder_lego = """" {Preorder}
+
+{Franchise} {Name}
+
+Oписание модeли:
+· Koл-во деталей: {Piece_Count}
+· Применимый вoзраcт: {ApplicableAge}
+· UРC : {SKU_new}
+
+❤️ Добавь это объявление к себе в избранное
+
+✅ В профиле есть еще очень много интересного!)
+
+💬 Подписывайся на наши соцсети!
+
+Если интересует что-то из Jоytоy Wаrhаmmеr/Infinity/Dаrk Sоursе, LЕGО, Hot Toys и т.д. пишите - можем привезти под заказ практически любой товар!
+
+# LЕGО, Лего, Конструктор, Набор, lego star wars, lego marvel, lego city, lego heroes, lego ninjago, lego super heroes, lego technic, lego mindstorms, lego worlds, lego minecraft, lego harry potter, lego duplo, lego friends"""
+
+Description_string_preorder_lego
+
+def get_description(row):
+    """Выбирает подходящий шаблон описания и заполняет его"""
+    if row['Stock'] > '0' and row['Franchise'] == 'LEGO':
+        template = Description_string_stock_lego
+    elif row['Stock'] == '0' and str(row['Preorder']).strip() != '' and row['Franchise'] == 'LEGO':
+        template = Description_string_preorder_lego
+    elif row['Stock'] > '0':
+        template = Description_string_stock
+    elif row['Stock'] == '0' and str(row['Preorder']).strip() != '':
+        template = Description_string_preorder
+    else:
+        template = Description_string_nonstock
+    
+    return template.format(
+        Franchise=row['Franchise'],
+        Name=row['Name'],
+        Scale=row['Scale'],
+        ApplicableAge=row['Applicable Age'],
+        SKU_new=row['SKU (new)'],
+        Preorder=row['Preorder'],
+        Piece_Count =row['Piece Count']
+    )
+
+# Корневой элемент
+root = etree.Element('Ads', formatVersion="3", target="Avito.ru")
+
+for _, row in avito_df_final.iterrows():
+    ad = etree.SubElement(root, 'Ad')
+
+    etree.SubElement(ad, 'Id').text = str(row['SKU (new)'])
+    etree.SubElement(ad, 'DateBegin').text = ''
+    etree.SubElement(ad, 'DateEnd').text = ''
+    etree.SubElement(ad, 'ListingFee').text = ''
+    etree.SubElement(ad, 'AdStatus').text = 'Free'
+    etree.SubElement(ad, 'AvitoId').text = str(row['Avito_ID'])
+    etree.SubElement(ad, 'ManagerName').text = ''
+    etree.SubElement(ad, 'ContactPhone').text = '+7 985 182-56-36'
+    etree.SubElement(ad, 'Address').text = 'Москва, метро Улица Скобелевская'
+    etree.SubElement(ad, 'Latitude').text = ''
+    etree.SubElement(ad, 'Longitude').text = ''
+    etree.SubElement(ad, 'Title').text = row['Short_name']
+    etree.SubElement(ad, 'Description').text = get_description(row)
+    # Добавляем функцию для форматирования цены без запятых
+    price_value = str(int(str(row['Price']).replace(',', '').strip()))
+    etree.SubElement(ad, 'Price').text = price_value
+    etree.SubElement(ad, 'Stock').text = str(row['Stock'])
+    
+    # Блок изображений (исправленный)
+    images = etree.SubElement(ad, 'Images')
+    if pd.notna(row.get('URL')):
+    # Обрабатываем случаи, когда URL разделены запятыми
+        url_list = [url.strip() for url in str(row['URL']).split(' | ') if url.strip()]
+        for url in url_list:
+            etree.SubElement(images, 'Image', url=url)
+
+    etree.SubElement(ad, 'VideoURL').text = ''
+    etree.SubElement(ad, 'ContactMethod').text = ''
+    etree.SubElement(ad, 'Category').text = 'Коллекционирование'
+    etree.SubElement(ad, 'InternetCalls').text = ''
+    etree.SubElement(ad, 'CallsDevices').text = ''
+    etree.SubElement(ad, 'Delivery').text = ''
+    etree.SubElement(ad, 'WeightForDelivery').text = ''
+    etree.SubElement(ad, 'LengthForDelivery').text = ''
+    etree.SubElement(ad, 'HeightForDelivery').text = ''
+    etree.SubElement(ad, 'WidthForDelivery').text = ''
+    etree.SubElement(ad, 'DeliverySubsidy').text = ''
+    etree.SubElement(ad, 'GoodsType').text = 'Модели'
+    etree.SubElement(ad, 'AdType').text = 'Товар от производителя' if row['Franchise'] == 'LEGO' else 'Продаю своё'
+    etree.SubElement(ad, 'Condition').text = 'Новое'
+    etree.SubElement(ad, 'VideoFileURL').text = ''
+    etree.SubElement(ad, 'SeriesLEGO').text = ''
+    etree.SubElement(ad, 'Brand').text = 'LEGO' if row['Franchise'] == 'LEGO' else ''
+    etree.SubElement(ad, 'Toys').text = 'Конструкторы' if row['Franchise'] == 'LEGO' else ''
+
+# Форматирование красивого XML
+tree = etree.ElementTree(root)
+tree.write('output.xml', pretty_print=True, encoding='utf-8', xml_declaration=True)
+
+# Если хотите сразу получить строку:
+xml_string = etree.tostring(root, pretty_print=True, encoding='unicode')
+#print(xml_string)
+
+# сохраняем на диск
+#tree.write(r'C:\Users\Fibo\Проекты\_WH40\Сервер\avito_feed.xml', 
+#           pretty_print=True, 
+#           encoding='utf-8', 
+#           xml_declaration=True)
+
+# Укажите полный путь к файлу НА СЕРВЕРЕ (не локальный!)
+output_path = '/var/www/html/avito_feed.xml'  # Пример пути
+
+# 3. Записываем файл с проверками
+try:
+    # Проверяем доступ к папке
+    if not os.path.exists("/var/www/html"):
+        raise FileNotFoundError("Папка /var/www/html не существует")
+    
+    if not os.access("/var/www/html", os.W_OK):
+        raise PermissionError("Нет прав на запись в /var/www/html")
+
+    # Создаем и сохраняем XML
+    tree = etree.ElementTree(root)
+    tree.write(
+        output_path,
+        pretty_print=True,
+        xml_declaration=True,
+        encoding="utf-8"
+    )
+    
+    # Проверяем результат
+    if os.path.exists(output_path):
+        print(f"Файл успешно сохранен: {output_path}")
+        print(f"Размер: {os.path.getsize(output_path)} байт")
+    else:
+        raise RuntimeError("Файл не был создан!")
+
+except Exception as e:
+    print(f"Ошибка сохранения XML: {str(e)}")
+    raise  # Остановка скрипта при ошибке
